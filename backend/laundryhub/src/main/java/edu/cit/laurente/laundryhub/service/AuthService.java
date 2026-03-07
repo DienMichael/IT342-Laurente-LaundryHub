@@ -33,7 +33,13 @@ public class AuthService {
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        user.setRole("CUSTOMER");
+        
+        // Set role based on request, default to CUSTOMER if not provided
+        String role = request.getRole() != null ? request.getRole().toUpperCase() : "CUSTOMER";
+        if (!role.equals("STAFF") && !role.equals("CUSTOMER") && !role.equals("ADMIN")) {
+            role = "CUSTOMER";
+        }
+        user.setRole(role);
         user.setCreatedAt(LocalDateTime.now());
 
         return userRepository.save(user);

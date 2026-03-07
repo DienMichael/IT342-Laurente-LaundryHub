@@ -13,8 +13,10 @@ public class RegisterRequest {
     @NotBlank(message = "Email is required")
     private String email;
 
-    @Size(min = 8, message = "Password must be at least 8 characters")
+    @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
+
+    private String role;
 
     // Getters and Setters
     public String getName() { return name; }
@@ -25,4 +27,7 @@ public class RegisterRequest {
 
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
+
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
 }
