@@ -2,7 +2,8 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
-const API_BASE_URL = 'http://localhost:8080/api/v1';
+const API_BASE_URL = 'http://localhost:8080/api';
+const DEVELOPMENT_MODE = true; // Set to false to persist login
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -11,6 +12,12 @@ export function AuthProvider({ children }) {
 
   // Check if user is already logged in on mount
   useEffect(() => {
+    // Clear storage in development mode to always start fresh
+    if (DEVELOPMENT_MODE) {
+      localStorage.removeItem('laundry_user');
+      localStorage.removeItem('laundry_token');
+    }
+
     const savedUser = localStorage.getItem('laundry_user');
     const savedToken = localStorage.getItem('laundry_token');
     if (savedUser && savedToken) {
