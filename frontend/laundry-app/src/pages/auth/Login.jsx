@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { Button } from '../ui/button';
+import { useAuth } from '../../context/AuthContext';  // This should work
+import { Button } from '../ui/button';  // Change if needed
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
@@ -17,7 +17,7 @@ export function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast.error('Please fill in all fields');
       return;
@@ -29,7 +29,7 @@ export function Login() {
 
     if (success) {
       toast.success('Login successful!');
-      
+
       // Get user to check role
       const userData = localStorage.getItem('laundry_user');
       if (userData) {
