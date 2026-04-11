@@ -106,6 +106,7 @@ public class AuthFacade {
      * @return the User object
      */
     public User getUserByEmail(String email) {
-        return userService.findByEmail(email);
+        return userService.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 }
