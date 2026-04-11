@@ -1,16 +1,30 @@
 package edu.cit.laurente.laundryhub.service;
 
+import java.time.LocalDateTime;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
 import edu.cit.laurente.laundryhub.dto.LoginRequest;
 import edu.cit.laurente.laundryhub.dto.RegisterRequest;
 import edu.cit.laurente.laundryhub.entity.User;
 import edu.cit.laurente.laundryhub.repository.UserRepository;
 import edu.cit.laurente.laundryhub.security.JwtService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
+import edu.cit.laurente.laundryhub.service.strategy.AuthenticationStrategy;
 
-import java.time.LocalDateTime;
-
+/**
+ * Singleton Pattern: AuthService is a singleton managed by Spring
+ * Every authentication request uses the same instance.
+ * 
+ * This service is now integrated with:
+ * - Strategy Pattern: Uses AuthenticationStrategy for flexible authentication
+ * - Builder Pattern: Uses User.builder() for object creation
+ * 
+ * Note: This service can be used directly, but the Facade pattern
+ * (AuthFacade) is the recommended approach in controllers for cleaner separation.
+ */
 @Service
 public class AuthService {
 
@@ -23,42 +37,58 @@ public class AuthService {
     @Autowired
     private JwtService jwtService;
 
-    // Registration
-    public User register(RegisterRequest request) {
+    @Autowired
+    private AuthenticationStrategy authenticationStrategy;
+
+    /**
+     * Register a new user
+     * Uses Builder pattern to construct User objects
+     * 
+     * @param request the registration request
+     * @return the created User
+     */
+    public @NonNull User register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already registered");
         }
 
-        User user = new User();
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        
-        // Set role based on request, default to CUSTOMER if not provided
         String role = request.getRole() != null ? request.getRole().toUpperCase() : "CUSTOMER";
         if (!role.equals("STAFF") && !role.equals("CUSTOMER") && !role.equals("ADMIN")) {
             role = "CUSTOMER";
         }
-        user.setRole(role);
-        user.setCreatedAt(LocalDateTime.now());
+
+        // Using Builder Pattern
+        User user = User.builder()
+                .name(request.getName())
+                .email(request.getEmail())
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .role(role)
+                .createdAt(LocalDateTime.now())
+                .build();
 
         return userRepository.save(user);
     }
 
-    // Login
-    public String login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
-
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new RuntimeException("Invalid credentials");
-        }
-
+    /**
+     * Login a user using the configured authentication strategy
+     * Uses Strategy Pattern for flexible authentication methods
+     * 
+     * @param request the login request
+     * @return JWT token
+     */
+    public @NonNull String login(LoginRequest request) {
+        // Strategy Pattern: Delegate to the strategy implementation
+        User user = authenticationStrategy.authenticate(request);
         return jwtService.generateToken(user);
     }
 
-    // Get User by Email
-    public User getUserByEmail(String email) {
+    /**
+     * Get User by Email
+     * 
+     * @param email the user's email
+     * @return the User object
+     */
+    public @NonNull User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
