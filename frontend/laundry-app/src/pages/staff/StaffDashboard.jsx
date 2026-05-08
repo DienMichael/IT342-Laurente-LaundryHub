@@ -135,14 +135,33 @@ const StaffDashboard = () => {
               processingOrders.map((order) => (
                 <div key={order.id} className="p-6 hover:bg-gray-50">
                   <div className="flex justify-between items-start">
-                    <div>
+                    <div className="flex-1">
                       <p className="font-semibold">Order #{order.id}</p>
                       <p className="text-sm text-gray-500">
                         {format(new Date(order.createdAt), 'MMM dd, yyyy h:mm a')}
                       </p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        Weight: {order.actualWeight ? `${order.actualWeight} kg` : 'N/A'} | Amount: ₱{order.finalAmount || 'N/A'}
+                      <p className="text-sm text-gray-600 mt-2">
+                        <strong>Weight:</strong> {order.actualWeight ? `${order.actualWeight} kg` : 'N/A'} | <strong>Amount:</strong> ₱{order.finalAmount || 'N/A'}
                       </p>
+                      {/* Machine Assignment Details */}
+                      {(order.status === 'WASHING' || order.status === 'DRYING') && (
+                        <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
+                          <p className="text-xs font-semibold text-blue-900 mb-1">Machine Assignment:</p>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div>
+                              <span className="text-gray-600">Machine ID:</span>
+                              <p className="font-semibold text-blue-900">{order.assignedMachineId || 'Pending'}</p>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Process Type:</span>
+                              <p className="font-semibold text-blue-900">{order.status === 'WASHING' ? 'Washer' : 'Dryer'}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {order.status === 'PAID' && (
+                        <p className="text-xs text-orange-600 mt-2 font-semibold">⏳ Waiting for machine assignment</p>
+                      )}
                     </div>
                     <StatusBadge status={order.status} />
                   </div>

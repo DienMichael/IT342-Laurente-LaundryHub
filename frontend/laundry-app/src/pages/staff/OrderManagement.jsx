@@ -107,6 +107,16 @@ const OrderManagement = () => {
         machineId: selectedMachine.id,
       });
       toast.success(`Machine ${selectedMachine.name} assigned successfully!`);
+      
+      // Auto-update order status based on machine type
+      if (assigningMachineType === 'WASHING') {
+        await orderService.updateStatus(assigningOrderId, { status: 'WASHING' });
+        toast.success('Order moved to Washing');
+      } else if (assigningMachineType === 'DRYING') {
+        await orderService.updateStatus(assigningOrderId, { status: 'DRYING' });
+        toast.success('Order moved to Drying');
+      }
+      
       setAssigningOrderId(null);
       setAssigningMachineType(null);
       setAvailableMachines([]);
@@ -163,6 +173,7 @@ const OrderManagement = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Machine</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -180,6 +191,15 @@ const OrderManagement = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {order.finalAmount ? `₱${order.finalAmount}` : '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {order.status === 'WASHING' || order.status === 'DRYING' ? (
+                          <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-semibold">
+                            {order.assignedMachineId ? `#${order.assignedMachineId}` : '-'}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {format(new Date(order.createdAt), 'MMM dd, h:mm a')}
@@ -202,45 +222,13 @@ const OrderManagement = () => {
                               Assign
                             </button>
                           )}
-
-                          {/* Quick action: auto-assign machine (reduces navigation).
-                              Flow requirement: order must be in a machine processable state.
-                              In this app, machine assignment transitions orders to WASHING/DRYING.
-                           */}
-                          {order.status === 'PAID' && (
-                            <div className="flex gap-2">
-                              <button
-                                onClick={async () => {
-                                  try {
-                                    // Assign only when order is in PAID (ready to start washing)
-                                    if (order.status !== 'PAID') {
-                                      toast.error('Order must be PAID before assigning to a machine');
-                                      return;
-                                    }
-
-                                    const machines = machineService.getAllMachines('WASHING').filter(m => m.available);
-                                    if (!machines?.length) {
-                                      toast.error('No available washers');
-                                      return;
-                                    }
-
-                                    await orderService.assignMachine(order.id, {
-                                      processType: 'WASHING',
-                                      machineId: machines[0].id,
-                                    });
-
-                                    toast.success('Washer assigned');
-                                    fetchOrders();
-                                  } catch (error) {
-                                    console.error('Auto-assign washer failed:', error);
-                                    toast.error('Failed to assign washer');
-                                  }
-                                }}
-                                className="px-2 py-1 bg-purple-700 text-white text-xs rounded hover:bg-purple-800"
-                              >
-                                Quick Washer
-                              </button>
-                            </div>
+                          {order.status === 'WASHING' && (
+                            <button
+                              onClick={() => setSelectingMachineType(order.id)}
+                              className="px-2 py-1 bg-orange-600 text-white text-xs rounded hover:bg-orange-700"
+                            >
+                              Pick Dryer
+                            </button>
                           )}
                           {order.status === 'AWAITING_PAYMENT' && (
                             <button
@@ -335,29 +323,49 @@ const OrderManagement = () => {
             <h2 className="text-xl font-bold mb-6">Select Machine Type</h2>
             <p className="text-gray-600 mb-6">Order #{selectingMachineType}</p>
 
+            {/* Get the order to determine which machine type buttons to show */}
+            {orders.find(o => o.id === selectingMachineType) && (
+              <div className="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-200">
+                <h3 className="font-semibold text-sm mb-3">Order Information:</h3>
+                <div className="text-xs space-y-2">
+                  <p><strong>Customer:</strong> {orders.find(o => o.id === selectingMachineType)?.user?.name || 'N/A'}</p>
+                  <p><strong>Status:</strong> {orders.find(o => o.id === selectingMachineType)?.status}</p>
+                  <p><strong>Weight:</strong> {orders.find(o => o.id === selectingMachineType)?.actualWeight ? `${orders.find(o => o.id === selectingMachineType)?.actualWeight} kg` : 'Not weighed'}</p>
+                  <p><strong>Amount:</strong> {orders.find(o => o.id === selectingMachineType)?.finalAmount ? `₱${orders.find(o => o.id === selectingMachineType)?.finalAmount}` : 'N/A'}</p>
+                  {orders.find(o => o.id === selectingMachineType)?.status === 'WASHING' && orders.find(o => o.id === selectingMachineType)?.assignedMachineId && (
+                    <p className="text-blue-700 font-semibold">🔄 <strong>Current Washer:</strong> Machine #{orders.find(o => o.id === selectingMachineType)?.assignedMachineId}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <button
-                onClick={() => {
-                  setAssigningOrderId(selectingMachineType);
-                  handleSelectMachineType('WASHING');
-                  setSelectingMachineType(null);
-                }}
-                className="p-4 bg-blue-50 border-2 border-blue-300 rounded-lg hover:border-blue-500 transition"
-              >
-                <div className="font-bold text-blue-700">Washing</div>
-                <div className="text-sm text-blue-600">Washing Machine</div>
-              </button>
-              <button
-                onClick={() => {
-                  setAssigningOrderId(selectingMachineType);
-                  handleSelectMachineType('DRYING');
-                  setSelectingMachineType(null);
-                }}
-                className="p-4 bg-purple-50 border-2 border-purple-300 rounded-lg hover:border-purple-500 transition"
-              >
-                <div className="font-bold text-purple-700">Drying</div>
-                <div className="text-sm text-purple-600">Dryer Machine</div>
-              </button>
+              {orders.find(o => o.id === selectingMachineType)?.status === 'PAID' && (
+                <button
+                  onClick={() => {
+                    setAssigningOrderId(selectingMachineType);
+                    handleSelectMachineType('WASHING');
+                    setSelectingMachineType(null);
+                  }}
+                  className="p-4 bg-blue-50 border-2 border-blue-300 rounded-lg hover:border-blue-500 transition"
+                >
+                  <div className="font-bold text-blue-700">Washing</div>
+                  <div className="text-sm text-blue-600">Washing Machine</div>
+                </button>
+              )}
+              {orders.find(o => o.id === selectingMachineType)?.status === 'WASHING' && (
+                <button
+                  onClick={() => {
+                    setAssigningOrderId(selectingMachineType);
+                    handleSelectMachineType('DRYING');
+                    setSelectingMachineType(null);
+                  }}
+                  className="p-4 bg-purple-50 border-2 border-purple-300 rounded-lg hover:border-purple-500 transition"
+                >
+                  <div className="font-bold text-purple-700">Drying</div>
+                  <div className="text-sm text-purple-600">Dryer Machine</div>
+                </button>
+              )}
             </div>
 
             <button
@@ -377,11 +385,48 @@ const OrderManagement = () => {
             <h2 className="text-xl font-bold mb-4">Assign Machine to Order</h2>
             <p className="text-gray-600 mb-4">Order #{assigningOrderId} - Machine Type: {assigningMachineType?.replace(/_/g, ' ')}</p>
 
+            {/* Order Information Section */}
+            {orders.find(o => o.id === assigningOrderId) && (
+              <div className="bg-green-50 rounded-lg p-4 mb-6 border border-green-200">
+                <h3 className="font-semibold text-sm mb-3">Order Details:</h3>
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <p className="text-gray-600">Customer:</p>
+                    <p className="font-semibold">{orders.find(o => o.id === assigningOrderId)?.user?.name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Weight:</p>
+                    <p className="font-semibold">{orders.find(o => o.id === assigningOrderId)?.actualWeight ? `${orders.find(o => o.id === assigningOrderId)?.actualWeight} kg` : 'Not weighed'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Amount:</p>
+                    <p className="font-semibold">₱{orders.find(o => o.id === assigningOrderId)?.finalAmount || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Status:</p>
+                    <p className="font-semibold">{orders.find(o => o.id === assigningOrderId)?.status}</p>
+                  </div>
+                  {orders.find(o => o.id === assigningOrderId)?.status === 'WASHING' && (
+                    <div className="col-span-2 bg-blue-100 p-2 rounded">
+                      <p className="text-gray-600">Current Washer Assignment:</p>
+                      <p className="font-semibold text-blue-900">🔧 Machine #{orders.find(o => o.id === assigningOrderId)?.assignedMachineId}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-xs font-semibold text-yellow-800 mb-1">💡 Assigning: {assigningMachineType}</p>
+              <p className="text-xs text-yellow-700">Only available machines are shown below. Machines in use cannot be selected.</p>
+            </div>
+
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
               {availableMachines.map((machine) => (
                 <button
                   key={machine.id}
                   onClick={() => setSelectedMachine(machine)}
+                  disabled={!machine.available}
                   className={`p-4 rounded-lg border-2 transition cursor-pointer ${
                     selectedMachine?.id === machine.id
                       ? machine.available
@@ -389,8 +434,8 @@ const OrderManagement = () => {
                         : 'border-gray-300 bg-gray-50'
                       : machine.available
                       ? 'border-green-300 bg-green-50 hover:border-green-500'
-                      : 'border-red-300 bg-red-50 hover:border-red-500'
-                  }`}
+                      : 'border-red-300 bg-red-50 cursor-not-allowed'
+                  } ${!machine.available ? 'opacity-60' : ''}`}
                 >
                   <div className="font-semibold text-sm mb-1">{machine.name}</div>
                   <div className="text-xs text-gray-600 mb-2">ID: {machine.id}</div>
@@ -398,8 +443,8 @@ const OrderManagement = () => {
                     <span className="text-xs text-green-700 font-semibold">✓ Available</span>
                   ) : (
                     <div>
-                      <span className="text-xs text-red-700 font-semibold block">✗ Unavailable</span>
-                      <span className="text-xs text-red-600">Order {machine.usedByOrder}</span>
+                      <span className="text-xs text-red-700 font-semibold block">✗ In Use</span>
+                      <span className="text-xs text-red-600">By Order #{machine.usedByOrder}</span>
                     </div>
                   )}
                 </button>
