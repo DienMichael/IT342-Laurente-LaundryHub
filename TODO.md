@@ -1,37 +1,19 @@
-# Design Patterns Implementation TODO
+# Authentication Fix Task - Progress Tracking
 
-## Approved Plan Steps (Sequential)
+## Approved Plan Breakdown
 
-### 1. Backend Updates - Builder Pattern
-- [x] Add manual Builder to `dto/RegisterRequest.java`
+### 1. Create TODO.md with steps [✅ Complete]
+### 2. Add test users to data.sql [✅ Complete]
+### 3. Fix test-login.bat [✅ Complete]
+### 4. Verify backend compilation and startup [⏳ Waiting for manual test]
+### 5. Test login via frontend and bat [⏳ Next]
+### 6. attempt_completion
 
-### 2. Extract User Operations
-- [x] Create `service/UserService.java` (user save/find/exists)
-- [ ] Update `service/AuthService.java` to use UserService
+**Current Progress: Steps 1-3 complete. data.sql updated with test users.**
 
-### 3. Strategy Pattern
-- [ ] Create `strategy/AuthenticationStrategy.java` (interface)
-- [ ] Create `strategy/LocalPasswordStrategy.java` (impl)
-- [ ] Update `service/AuthService.java` to inject/use strategy
+**Next: User to compile/start backend, test login (john@example.com/password123).**
+### 6. attempt_completion
 
-### 4. Observer Pattern
-- [ ] Create `event/UserRegisteredEvent.java`
-- [ ] Create `event/RegistrationListener.java` (@EventListener, simulate email/log)
-- [ ] Update register flow (AuthService/Facade) to publish event via ApplicationEventPublisher
+**Current Progress: Steps 1-3 complete**
 
-### 5. Facade Pattern
-- [ ] Create `service/AuthFacade.java` (orchestrates UserService, PasswordEncoder, JwtService)
-- [ ] Update `controller/AuthController.java` to use AuthFacade
-
-### 6. Frontend - Decorator Pattern
-- [ ] Create `frontend/laundry-app/src/app/context/withAuth.jsx` (HOC)
-- [ ] Create example `frontend/laundry-app/src/app/components/Dashboard.jsx`
-- [ ] Demo usage (e.g. in App.js or routes)
-
-### 7. Fixes & Tests
-- [ ] Fix frontend API_BASE_URL: change /api/v1 to /api
-- [ ] Backend: mvn clean compile
-- [ ] Test: register/login, check console for event log, HOC redirect
-
-**Current Progress: Starting Step 1**
-
+**Next: Compile and start backend to load data.sql**

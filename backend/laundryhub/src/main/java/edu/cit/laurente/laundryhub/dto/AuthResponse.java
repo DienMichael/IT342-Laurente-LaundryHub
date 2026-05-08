@@ -7,6 +7,7 @@ public class AuthResponse {
     private String name;
     private String email;
     private String role;
+    private String message;
 
     public AuthResponse(boolean success, String accessToken, String name, String email, String role) {
         this.success = success;
@@ -14,6 +15,16 @@ public class AuthResponse {
         this.name = name;
         this.email = email;
         this.role = role;
+        this.message = null;
+    }
+
+    public AuthResponse(boolean success, String accessToken, String name, String email, String role, String message) {
+        this.success = success;
+        this.accessToken = accessToken;
+        this.name = name;
+        this.email = email;
+        this.role = role;
+        this.message = message;
     }
 
     // Getters and Setters
@@ -31,4 +42,7 @@ public class AuthResponse {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
 }

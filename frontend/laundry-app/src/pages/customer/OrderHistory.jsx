@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { orderService } from '../../services/order.service';
-import OrderCard from '../../components/Orders/OrderCard';
+import OrderCard from '../../components/orders/OrderCard';
 
 const OrderHistory = () => {
   const [orders, setOrders] = useState([]);

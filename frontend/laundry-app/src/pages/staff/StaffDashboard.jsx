@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { orderService } from '../../services/order.service';
-import StatusBadge from '../../components/Common/StatusBadge';
+import StatusBadge from '../../components/common/StatusBadge';
 import { format } from 'date-fns';
 
 const StaffDashboard = () => {
@@ -15,7 +16,7 @@ const StaffDashboard = () => {
 
   const fetchOrders = async () => {
     try {
-      const data = await orderService.getMyOrders();
+      const data = await orderService.getAllOrders();
       setOrders(data);
     } catch (error) {
       console.error('Failed to fetch orders:', error);
@@ -92,8 +93,13 @@ const StaffDashboard = () => {
                         {order.status === 'AWAITING_PAYMENT' && (
                           <button
                             onClick={async () => {
-                              await orderService.confirmPayment(order.id);
-                              fetchOrders();
+                              try {
+                                await orderService.confirmPayment(order.id);
+                                toast.success('Payment confirmed!');
+                                fetchOrders();
+                              } catch (error) {
+                                toast.error('Failed to confirm payment');
+                              }
                             }}
                             className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
                           >
@@ -110,6 +116,64 @@ const StaffDashboard = () => {
                         )}
                       </div>
                     </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Processing Orders */}
+        <div className="bg-white rounded-lg shadow mb-8">
+          <div className="px-6 py-4 border-b">
+            <h2 className="text-xl font-semibold">Processing Orders</h2>
+          </div>
+          <div className="divide-y">
+            {processingOrders.length === 0 ? (
+              <div className="p-6 text-center text-gray-500">No processing orders</div>
+            ) : (
+              processingOrders.map((order) => (
+                <div key={order.id} className="p-6 hover:bg-gray-50">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-semibold">Order #{order.id}</p>
+                      <p className="text-sm text-gray-500">
+                        {format(new Date(order.createdAt), 'MMM dd, yyyy h:mm a')}
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Weight: {order.actualWeight ? `${order.actualWeight} kg` : 'N/A'} | Amount: ₱{order.finalAmount || 'N/A'}
+                      </p>
+                    </div>
+                    <StatusBadge status={order.status} />
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Completed Orders */}
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b">
+            <h2 className="text-xl font-semibold">Completed Orders</h2>
+          </div>
+          <div className="divide-y">
+            {completedOrders.length === 0 ? (
+              <div className="p-6 text-center text-gray-500">No completed orders</div>
+            ) : (
+              completedOrders.map((order) => (
+                <div key={order.id} className="p-6 hover:bg-gray-50">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-semibold">Order #{order.id}</p>
+                      <p className="text-sm text-gray-500">
+                        {format(new Date(order.createdAt), 'MMM dd, yyyy h:mm a')}
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Weight: {order.actualWeight ? `${order.actualWeight} kg` : 'N/A'} | Amount: ₱{order.finalAmount || 'N/A'}
+                      </p>
+                    </div>
+                    <StatusBadge status={order.status} />
                   </div>
                 </div>
               ))

@@ -9,8 +9,14 @@ import org.springframework.stereotype.Service;
 
 import edu.cit.laurente.laundryhub.dto.MachineAssignmentRequest;
 import edu.cit.laurente.laundryhub.dto.OrderRequest;
-import edu.cit.laurente.laundryhub.entity.*;
-import edu.cit.laurente.laundryhub.repository.*;
+import edu.cit.laurente.laundryhub.entity.Machine;
+import edu.cit.laurente.laundryhub.entity.MachineAssignment;
+import edu.cit.laurente.laundryhub.entity.Order;
+import edu.cit.laurente.laundryhub.entity.User;
+import edu.cit.laurente.laundryhub.repository.MachineAssignmentRepository;
+import edu.cit.laurente.laundryhub.repository.MachineRepository;
+import edu.cit.laurente.laundryhub.repository.OrderRepository;
+import edu.cit.laurente.laundryhub.repository.UserRepository;
 
 @Service
 public class OrderFacade {
@@ -103,5 +109,9 @@ public class OrderFacade {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return orderRepository.findByUserOrderByCreatedAtDesc(user);
+    }
+
+    public List<Order> getAllOrders() {
+        return orderRepository.findAllByOrderByCreatedAtDesc();
     }
 }

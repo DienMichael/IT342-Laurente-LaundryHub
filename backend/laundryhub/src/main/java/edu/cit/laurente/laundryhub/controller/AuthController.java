@@ -3,6 +3,7 @@ package edu.cit.laurente.laundryhub.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,6 +39,14 @@ public class AuthController {
     private AuthFacade authFacade;
 
     /**
+     * Health check endpoint
+     */
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
+        return ResponseEntity.ok("Backend is running");
+    }
+
+    /**
      * Register a new user
      * Uses Facade Pattern: Controller delegates to AuthFacade which orchestrates the operation
      * 
@@ -46,18 +55,22 @@ public class AuthController {
      */
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        // Facade handles: validation, encoding, saving, event publishing
-        User user = authFacade.registerUser(request);
+        try {
+            // Facade handles: validation, encoding, saving, event publishing
+            User user = authFacade.registerUser(request);
 
-        AuthResponse response = new AuthResponse(
-                true,
-                null,
-                user.getName(),
-                user.getEmail(),
-                user.getRole()
-        );
+            AuthResponse response = new AuthResponse(
+                    true,
+                    null,
+                    user.getName(),
+                    user.getEmail(),
+                    user.getRole()
+            );
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(new AuthResponse(false, null, null, null, null, e.getMessage()));
+        }
     }
 
     /**
@@ -69,18 +82,22 @@ public class AuthController {
      */
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        // Facade handles: strategy-based authentication, token generation
-        String token = authFacade.authenticateAndGenerateToken(request);
-        User user = authFacade.getUserByEmail(request.getEmail());
+        try {
+            // Facade handles: strategy-based authentication, token generation
+            String token = authFacade.authenticateAndGenerateToken(request);
+            User user = authFacade.getUserByEmail(request.getEmail());
 
-        AuthResponse response = new AuthResponse(
-                true,
-                token,
-                user.getName(),
-                user.getEmail(),
-                user.getRole()
-        );
+            AuthResponse response = new AuthResponse(
+                    true,
+                    token,
+                    user.getName(),
+                    user.getEmail(),
+                    user.getRole()
+            );
 
-        return ResponseEntity.ok(response);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(new AuthResponse(false, null, null, null, null, e.getMessage()));
+        }
     }
 }

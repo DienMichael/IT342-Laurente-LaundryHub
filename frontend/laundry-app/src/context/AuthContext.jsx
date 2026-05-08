@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8081';
 const DEVELOPMENT_MODE = true; // Set to false to persist login
 
 export function AuthProvider({ children }) {
@@ -42,13 +42,27 @@ export function AuthProvider({ children }) {
         }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Registration failed');
+      let data;
+      try {
+        const responseText = await response.text();
+        console.log('Response status:', response.status);
+        console.log('Response text:', responseText);
+        
+        if (!responseText) {
+          throw new Error('Server returned empty response');
+        }
+        
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        throw new Error('Server returned invalid JSON: ' + parseError.message);
       }
 
-      const data = await response.json();
-      
+      if (!response.ok) {
+        const errorMessage = data.message || data.error?.message || 'Registration failed';
+        throw new Error(errorMessage);
+      }
+
       // Store user data (no token on register)
       localStorage.setItem('laundry_user', JSON.stringify({
         name: data.name,
@@ -62,10 +76,13 @@ export function AuthProvider({ children }) {
         role: data.role,
       });
 
-      return true;
+      return { success: true, message: 'Registration successful' };
     } catch (error) {
       console.error('Registration error:', error);
-      return false;
+      const message = error instanceof TypeError 
+        ? 'Failed to connect to server. Make sure backend is running on ' + API_BASE_URL
+        : error.message || 'Registration failed';
+      return { success: false, message };
     }
   };
 
@@ -79,11 +96,25 @@ export function AuthProvider({ children }) {
         body: JSON.stringify({ email, password }),
       });
 
-      if (!response.ok) {
-        throw new Error('Invalid credentials');
+      let data;
+      try {
+        const responseText = await response.text();
+        console.log('Response status:', response.status);
+        console.log('Response text:', responseText);
+        
+        if (!responseText) {
+          throw new Error('Server returned empty response');
+        }
+        
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        throw new Error('Server returned invalid JSON: ' + parseError.message);
       }
 
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || data.error?.message || 'Invalid credentials');
+      }
 
       // Store token and user data
       localStorage.setItem('laundry_token', data.accessToken);
@@ -100,10 +131,13 @@ export function AuthProvider({ children }) {
         role: data.role,
       });
 
-      return true;
+      return { success: true, message: 'Login successful' };
     } catch (error) {
       console.error('Login error:', error);
-      return false;
+      const message = error instanceof TypeError 
+        ? 'Failed to connect to server. Make sure backend is running on ' + API_BASE_URL
+        : error.message || 'Login failed';
+      return { success: false, message };
     }
   };
 

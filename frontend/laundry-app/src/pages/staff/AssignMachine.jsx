@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { orderService } from '../../services/order.service';
-import toast from 'react-hot-toast';
 
 const AssignMachine = () => {
   const { id } = useParams();
@@ -11,29 +11,72 @@ const AssignMachine = () => {
   const [order, setOrder] = useState(null);
   const navigate = useNavigate();
 
-  // Mock machines - in production, fetch from API
-  const machines = {
-    WASHER: [
-      { id: 1, name: 'Washer #1', capacity: '10kg', status: 'Available' },
-      { id: 2, name: 'Washer #2', capacity: '15kg', status: 'Available' },
-    ],
-    DRYER: [
-      { id: 3, name: 'Dryer #1', capacity: '10kg', status: 'Available' },
-      { id: 4, name: 'Dryer #2', capacity: '15kg', status: 'Available' },
-    ],
-  };
+  const [availableMachines, setAvailableMachines] = useState([]);
+
+  // Mock machine pool (20 total: 10 washing, 10 drying).
+  // Availability is controlled by which machines the backend reports as AVAILABLE.
+  const [mockMachines] = useState(() => {
+    const mk = (type, startId) =>
+      Array.from({ length: 10 }, (_, i) => ({
+        id: startId + i,
+        type,
+        capacity: 10 + (i % 3) * 5, // 10/15/20 kg pattern
+        status: 'AVAILABLE',
+      }));
+
+    return {
+      WASHING: mk('WASHER', 1),
+      DRYING: mk('DRYER', 11),
+    };
+  });
+
+  useEffect(() => {
+    // When staff selects a process type, load only AVAILABLE machines for that type.
+    // We merge the mock pool with backend availability so staff sees a full mock list,
+    // but only AVAILABLE ones can be selected.
+    const loadAvailableMachines = async () => {
+      if (!processType) {
+        setAvailableMachines([]);
+        return;
+      }
+
+      try {
+        const backendAvailable = await orderService.getAvailableMachines(processType);
+        const availableIds = new Set((backendAvailable || []).map((m) => m.id));
+
+        const fromMock = mockMachines[processType] || [];
+        const merged = fromMock.filter((m) => availableIds.has(m.id));
+
+        setAvailableMachines(merged);
+      } catch (error) {
+        console.error('Failed to load available machines:', error);
+        setAvailableMachines([]);
+        toast.error('Failed to load available machines');
+      }
+    };
+
+    loadAvailableMachines();
+  }, [processType, mockMachines]);
 
   useEffect(() => {
     fetchOrder();
   }, [id]);
 
   const fetchOrder = async () => {
+    const orderId = parseInt(id);
+    if (Number.isNaN(orderId)) {
+      toast.error('Invalid order id. Redirecting...');
+      setTimeout(() => navigate('/staff'), 2000);
+      return;
+    }
+
     try {
-      const data = await orderService.getOrder(parseInt(id));
+      const data = await orderService.getOrder(orderId);
       setOrder(data);
     } catch (error) {
-      toast.error('Failed to load order');
-      navigate('/staff');
+      console.error('Error loading order:', error);
+      toast.error('Order not found. Redirecting...');
+      setTimeout(() => navigate('/staff'), 2000);
     }
   };
 
@@ -119,11 +162,17 @@ const AssignMachine = () => {
                   onChange={(e) => setMachineId(e.target.value)}
                 >
                   <option value="">Select a machine</option>
-                  {machines[processType.toUpperCase()]?.map((machine) => (
-                    <option key={machine.id} value={machine.id}>
-                      {machine.name} ({machine.capacity}) - {machine.status}
+                  {availableMachines.length === 0 ? (
+                    <option value="" disabled>
+                      No available machines
                     </option>
-                  ))}
+                  ) : (
+                    availableMachines.map((machine) => (
+                      <option key={machine.id} value={machine.id}>
+                        {machine.type} #{machine.id} ({machine.capacity}kg) - {machine.status}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
             )}
