@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { orderService } from '../../services/order.service';
-import toast from 'react-hot-toast';
 
 const WeighOrder = () => {
   const { id } = useParams();
@@ -14,13 +14,19 @@ const WeighOrder = () => {
     fetchOrder();
   }, [id]);
 
+  const [loadingOrder, setLoadingOrder] = useState(true);
+
   const fetchOrder = async () => {
+    setLoadingOrder(true);
     try {
       const data = await orderService.getOrder(parseInt(id));
       setOrder(data);
     } catch (error) {
-      toast.error('Failed to load order');
-      navigate('/staff');
+      console.error('Error loading order:', error);
+      toast.error('Order not found. Redirecting...');
+      setTimeout(() => navigate('/staff'), 2000);
+    } finally {
+      setLoadingOrder(false);
     }
   };
 
@@ -44,10 +50,23 @@ const WeighOrder = () => {
     }
   };
 
+  if (loadingOrder) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading order...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!order) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <p className="text-red-600 font-semibold">Order not found</p>
+        </div>
       </div>
     );
   }

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';  // This should work
-import { Button } from '../ui/button';  // Change if needed
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
+import { useAuth } from '../../context/AuthContext';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/card';
 import { toast } from 'sonner';
 import { Droplets, Loader2 } from 'lucide-react';
 
@@ -24,10 +24,10 @@ export function Login() {
     }
 
     setLoading(true);
-    const success = await login(email, password);
+    const result = await login(email, password);
     setLoading(false);
 
-    if (success) {
+    if (result.success) {
       toast.success('Login successful!');
 
       // Get user to check role
@@ -41,7 +41,7 @@ export function Login() {
         }
       }
     } else {
-      toast.error('Invalid email or password');
+      toast.error(result.message || 'Invalid email or password');
     }
   };
 

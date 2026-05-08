@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { orderService } from '../../services/order.service';
-import toast from 'react-hot-toast';
 
 const CreateBooking = () => {
   const [notes, setNotes] = useState('');

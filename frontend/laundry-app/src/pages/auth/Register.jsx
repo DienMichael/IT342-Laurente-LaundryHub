@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
-import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/card';
+import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
 import { toast } from 'sonner';
 import { Droplets, Loader2 } from 'lucide-react';
 
@@ -21,7 +21,8 @@ export function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
+    // Validation
     if (!name || !email || !password || !confirmPassword) {
       toast.error('Please fill in all fields');
       return;
@@ -38,14 +39,14 @@ export function Register() {
     }
 
     setLoading(true);
-    const success = await register(name, email, password, role);
+    const result = await register(name, email, password, role);
     setLoading(false);
 
-    if (success) {
-      toast.success('Registration successful!');
+    if (result.success) {
+      toast.success('Registration successful! Please sign in.');
       navigate('/login');
     } else {
-      toast.error('Email already exists');
+      toast.error(result.message || 'Registration failed');
     }
   };
 
@@ -58,8 +59,8 @@ export function Register() {
               <Droplets className="w-8 h-8 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
-          <CardDescription>Join Smart Laundry Service today</CardDescription>
+          <CardTitle className="text-2xl font-bold">Smart Laundry Service</CardTitle>
+          <CardDescription>Create a new account</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -67,7 +68,6 @@ export function Register() {
               <Label htmlFor="name">Full Name</Label>
               <Input
                 id="name"
-                type="text"
                 placeholder="Enter your full name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -109,14 +109,14 @@ export function Register() {
             </div>
             <div className="space-y-2">
               <Label>Account Type</Label>
-              <RadioGroup value={role} onValueChange={(value) => setRole(value)}>
+              <RadioGroup value={role} onValueChange={setRole} className="flex flex-col space-y-1">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="customer" id="customer" />
-                  <Label htmlFor="customer" className="font-normal cursor-pointer">Customer</Label>
+                  <Label htmlFor="customer">Customer</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="staff" id="staff" />
-                  <Label htmlFor="staff" className="font-normal cursor-pointer">Staff / Administrator</Label>
+                  <Label htmlFor="staff">Staff</Label>
                 </div>
               </RadioGroup>
             </div>

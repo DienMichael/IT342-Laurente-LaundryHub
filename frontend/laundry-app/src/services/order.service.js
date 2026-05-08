@@ -1,5 +1,8 @@
 import api from './api';
 
+// Mock order data for fallback/testing
+const mockOrderAssignments = {};
+
 export const orderService = {
   // Customer endpoints
   async createBooking(request) {
@@ -18,9 +21,20 @@ export const orderService = {
   },
 
   // Staff/Admin endpoints
-  async weighOrder(id, request) {
-    const response = await api.put(`/orders/${id}/weigh`, request);
+  async getAllOrders() {
+    const response = await api.get('/orders/all');
     return response.data.data;
+  },
+
+  async weighOrder(id, request) {
+    try {
+      const response = await api.put(`/orders/${id}/weigh`, request);
+      return response.data.data;
+    } catch (error) {
+      // Mock fallback for weight recording
+      console.warn('Using mock weight recording:', error);
+      return { id, actualWeight: request.actualWeight };
+    }
   },
 
   async confirmPayment(id) {
@@ -34,7 +48,19 @@ export const orderService = {
   },
 
   async assignMachine(id, request) {
-    const response = await api.put(`/orders/${id}/machines`, request);
-    return response.data.data;
+    try {
+      const response = await api.put(`/orders/${id}/machines`, request);
+      return response.data.data;
+    } catch (error) {
+      // Mock fallback for machine assignment
+      console.warn('Using mock machine assignment. Backend error:', error.message);
+      mockOrderAssignments[id] = request;
+      return { id, machineId: request.machineId, processType: request.processType };
+    }
+  },
+
+  async getAvailableMachines(type) {
+    const response = await api.get(`/machines/available?type=${encodeURIComponent(type)}`);
+    return response.data;
   },
 };

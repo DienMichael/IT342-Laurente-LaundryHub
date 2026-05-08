@@ -16,19 +16,22 @@ const Navbar = () => {
   const getNavigationItems = () => {
     if (!user) return [];
 
-    if (user.role === 'customer') {
+    const roleUpperCase = user.role?.toUpperCase();
+    
+    if (roleUpperCase === 'CUSTOMER') {
       return [
-        { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-        { name: 'New Booking', href: '/booking', icon: '✨' },
-        { name: 'My Orders', href: '/orders', icon: '📦' },
+        { name: 'Dashboard', href: '/customer'},
+        { name: 'New Booking', href: '/booking'},
+        { name: 'My Orders', href: '/orders'},
       ];
-    } else {
+    } else if (roleUpperCase === 'STAFF' || roleUpperCase === 'ADMIN') {
       return [
-        { name: 'Dashboard', href: '/staff', icon: '📊' },
-        { name: 'Manage Orders', href: '/staff/orders', icon: '📋' },
-        { name: 'Weigh Orders', href: '/staff/weigh/pending', icon: '⚖️' },
+        { name: 'Dashboard', href: '/staff'},
+        { name: 'Manage Orders', href: '/staff/orders'},
       ];
     }
+    
+    return [];
   };
 
   const navigation = getNavigationItems();
