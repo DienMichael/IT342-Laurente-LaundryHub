@@ -1,0 +1,99 @@
+package edu.cit.laurente.laundryhub.features.auth;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import edu.cit.laurente.laundryhub.shared.entity.User;
+import jakarta.validation.Valid;
+
+/**
+ * Authentication Controller
+ * 
+ * This controller uses the Facade Pattern to delegate all complex authentication
+ * logic to AuthFacade. This keeps the controller clean and focused on HTTP concerns.
+ * 
+ * The controller no longer handles:
+ * - Password encoding
+ * - User creation and validation
+ * - Token generation
+ * - Event publishing
+ * 
+ * All of these are handled by AuthFacade, which internally coordinates
+ * multiple services following the appropriate design patterns.
+ */
+@RestController
+@RequestMapping("/api/auth")
+public class AuthController {
+
+    @Autowired
+    private AuthFacade authFacade;
+
+    /**
+     * Health check endpoint
+     */
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
+        return ResponseEntity.ok("Backend is running");
+    }
+
+    /**
+     * Register a new user
+     * Uses Facade Pattern: Controller delegates to AuthFacade which orchestrates the operation
+     * 
+     * @param request the registration request
+     * @return AuthResponse with user details
+     */
+    @PostMapping("/register")
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+        try {
+            // Facade handles: validation, encoding, saving, event publishing
+            User user = authFacade.registerUser(request);
+
+            AuthResponse response = new AuthResponse(
+                    true,
+                    null,
+                    user.getName(),
+                    user.getEmail(),
+                    user.getRole()
+            );
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(new AuthResponse(false, null, null, null, null, e.getMessage()));
+        }
+    }
+
+    /**
+     * Login a user
+     * Uses Facade Pattern: Controller delegates to AuthFacade which orchestrates the operation
+     * 
+     * @param request the login request
+     * @return AuthResponse with JWT token
+     */
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+        try {
+            // Facade handles: strategy-based authentication, token generation
+            String token = authFacade.authenticateAndGenerateToken(request);
+            User user = authFacade.getUserByEmail(request.getEmail());
+
+            AuthResponse response = new AuthResponse(
+                    true,
+                    token,
+                    user.getName(),
+                    user.getEmail(),
+                    user.getRole()
+            );
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(new AuthResponse(false, null, null, null, null, e.getMessage()));
+        }
+    }
+}
