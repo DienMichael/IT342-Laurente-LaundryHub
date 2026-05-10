@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { orderService } from '../../services/order.service';
+import { machineService } from '../../services/machine.service';
 
 const AssignMachine = () => {
   const { id } = useParams();
@@ -13,27 +14,8 @@ const AssignMachine = () => {
 
   const [availableMachines, setAvailableMachines] = useState([]);
 
-  // Mock machine pool (20 total: 10 washing, 10 drying).
-  // Availability is controlled by which machines the backend reports as AVAILABLE.
-  const [mockMachines] = useState(() => {
-    const mk = (type, startId) =>
-      Array.from({ length: 10 }, (_, i) => ({
-        id: startId + i,
-        type,
-        capacity: 10 + (i % 3) * 5, // 10/15/20 kg pattern
-        status: 'AVAILABLE',
-      }));
-
-    return {
-      WASHING: mk('WASHER', 1),
-      DRYING: mk('DRYER', 11),
-    };
-  });
-
   useEffect(() => {
-    // When staff selects a process type, load only AVAILABLE machines for that type.
-    // We merge the mock pool with backend availability so staff sees a full mock list,
-    // but only AVAILABLE ones can be selected.
+    // When staff selects a process type, load AVAILABLE machines from backend
     const loadAvailableMachines = async () => {
       if (!processType) {
         setAvailableMachines([]);
@@ -41,13 +23,11 @@ const AssignMachine = () => {
       }
 
       try {
-        const backendAvailable = await orderService.getAvailableMachines(processType);
-        const availableIds = new Set((backendAvailable || []).map((m) => m.id));
-
-        const fromMock = mockMachines[processType] || [];
-        const merged = fromMock.filter((m) => availableIds.has(m.id));
-
-        setAvailableMachines(merged);
+        const machines = await machineService.getAvailableMachines(processType);
+        setAvailableMachines(machines || []);
+        if (machines && machines.length === 0) {
+          toast.info('No available machines of this type');
+        }
       } catch (error) {
         console.error('Failed to load available machines:', error);
         setAvailableMachines([]);
@@ -56,7 +36,7 @@ const AssignMachine = () => {
     };
 
     loadAvailableMachines();
-  }, [processType, mockMachines]);
+  }, [processType]);
 
   useEffect(() => {
     fetchOrder();

@@ -3,7 +3,16 @@ package edu.cit.laurente.laundryhub.entity;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
 @Entity
 @Table(name = "orders")
@@ -25,6 +34,10 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     private PricingStatus pricingStatus;
+
+    // Computed for UI only (not stored in DB). Filled by backend using machine assignments.
+    @Transient
+    private Long assignedMachineId;
 
     private String notes;
     private LocalDateTime createdAt;
@@ -77,6 +90,9 @@ public class Order {
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+    public Long getAssignedMachineId() { return assignedMachineId; }
+    public void setAssignedMachineId(Long assignedMachineId) { this.assignedMachineId = assignedMachineId; }
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
     public OrderStatus getStatus() { return status; }

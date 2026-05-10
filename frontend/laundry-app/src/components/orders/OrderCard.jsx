@@ -8,7 +8,7 @@ const OrderCard = ({ order }) => {
   const navigate = useNavigate();
 
   const handleViewDetails = () => {
-    navigate(`/order-tracking/${order.id}`);
+    navigate(`/orders/${order.id}`);
   };
 
   return (
@@ -20,6 +20,9 @@ const OrderCard = ({ order }) => {
         <div>
           <p className="text-sm text-gray-500">Order ID</p>
           <p className="text-lg font-semibold text-gray-900">#{order.id}</p>
+          {order.user?.name && (
+            <p className="text-sm text-gray-600 mt-2">Owner: <span className="font-medium">{order.user.name}</span></p>
+          )}
         </div>
         <StatusBadge status={order.status} />
       </div>
@@ -57,13 +60,6 @@ const OrderCard = ({ order }) => {
           <p className="text-sm text-gray-700">{order.notes}</p>
         </div>
       )}
-
-      <div className="flex justify-end">
-        <button className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium">
-          View Details
-          <ChevronRightIcon className="h-4 w-4" />
-        </button>
-      </div>
     </div>
   );
 };

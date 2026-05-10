@@ -15,6 +15,31 @@ INSERT INTO users (name, email, password_hash, role, created_at) VALUES
 ('Staff User', 'staff@laundryhub.com', '$2a$10$K8Z0XJ7yPqRsTuVwXyZaBcDeFgHiJkLmNoPqRsTuVwXyZaBcDeFg', 'STAFF', CURRENT_TIMESTAMP),
 ('Admin User', 'admin@laundryhub.com', '$2a$10$NmlKjihgfedcba987654321ZYXWVUTSRQPONMLKjihgfedcba98765', 'ADMIN', CURRENT_TIMESTAMP);
 
+-- Machines: Washers (10) and Dryers (10), all start as AVAILABLE
+INSERT INTO machines (type, capacity, status) VALUES 
+-- Washing Machines
+('WASHING', 15.0, 'AVAILABLE'),
+('WASHING', 15.0, 'AVAILABLE'),
+('WASHING', 15.0, 'AVAILABLE'),
+('WASHING', 15.0, 'AVAILABLE'),
+('WASHING', 15.0, 'AVAILABLE'),
+('WASHING', 15.0, 'AVAILABLE'),
+('WASHING', 15.0, 'AVAILABLE'),
+('WASHING', 15.0, 'AVAILABLE'),
+('WASHING', 15.0, 'AVAILABLE'),
+('WASHING', 15.0, 'AVAILABLE'),
+-- Drying Machines
+('DRYING', 12.0, 'AVAILABLE'),
+('DRYING', 12.0, 'AVAILABLE'),
+('DRYING', 12.0, 'AVAILABLE'),
+('DRYING', 12.0, 'AVAILABLE'),
+('DRYING', 12.0, 'AVAILABLE'),
+('DRYING', 12.0, 'AVAILABLE'),
+('DRYING', 12.0, 'AVAILABLE'),
+('DRYING', 12.0, 'AVAILABLE'),
+('DRYING', 12.0, 'AVAILABLE'),
+('DRYING', 12.0, 'AVAILABLE');
+
 -- Test orders for staff to manage
 INSERT INTO orders (user_id, status, pricing_status, actual_weight, final_amount, notes, created_at) VALUES 
 (1, 'BOOKED', 'PENDING_WEIGHING', NULL, NULL, 'Regular wash and fold', CURRENT_TIMESTAMP),

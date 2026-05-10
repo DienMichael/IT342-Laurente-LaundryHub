@@ -1,19 +1,11 @@
-# Authentication Fix Task - Progress Tracking
+# TODO - Google Auth Fixes (LaundryHub)
 
-## Approved Plan Breakdown
+## Done
+- Fixed Google login to call the correct backend endpoint: `POST /api/auth/google`.
 
-### 1. Create TODO.md with steps [✅ Complete]
-### 2. Add test users to data.sql [✅ Complete]
-### 3. Fix test-login.bat [✅ Complete]
-### 4. Verify backend compilation and startup [⏳ Waiting for manual test]
-### 5. Test login via frontend and bat [⏳ Next]
-### 6. attempt_completion
+## Remaining
+- Implement real Google token verification in `backend/laundryhub/src/main/java/edu/cit/laurente/laundryhub/service/GoogleTokenService.java`.
+- Add required Maven dependencies for Google JWT verification.
+- Add `google.clientId` (or equivalent) to backend configuration (application.properties or env var) and wire it into verification.
+- Rebuild and test Google login end-to-end.
 
-**Current Progress: Steps 1-3 complete. data.sql updated with test users.**
-
-**Next: User to compile/start backend, test login (john@example.com/password123).**
-### 6. attempt_completion
-
-**Current Progress: Steps 1-3 complete**
-
-**Next: Compile and start backend to load data.sql**

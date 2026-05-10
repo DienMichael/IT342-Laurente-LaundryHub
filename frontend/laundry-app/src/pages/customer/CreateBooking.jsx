@@ -24,12 +24,16 @@ const CreateBooking = () => {
         notes: notes || null,
       });
       toast.success('Booking created successfully!');
-      navigate(`/tracking/${order.id}`);
+      // backend returns ApiResponse wrapper -> order.id may be undefined
+      navigate(`/orders/${order?.id ?? order?._id ?? ''}`);
     } catch (error) {
-      toast.error('Failed to create booking');
+      // orderService/axios interceptor should already toast, but this ensures a useful message.
+      const message = error?.response?.data?.error?.message || error?.response?.data?.message || error?.message;
+      toast.error(message || 'Failed to create booking');
     } finally {
       setLoading(false);
     }
+
   };
 
   return (
