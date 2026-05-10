@@ -29,7 +29,8 @@ export function AuthProvider({ children }) {
 
   const register = async (name, email, password, role = 'customer') => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -47,23 +48,25 @@ export function AuthProvider({ children }) {
         const responseText = await response.text();
         console.log('Response status:', response.status);
         console.log('Response text:', responseText);
-        
+
         if (!responseText) {
-          // Keep this error as-is so the UI shows the real cause.
-          throw new Error('Server returned empty response');
+          throw new Error(`Server returned empty response (status ${response.status})`);
         }
-        
+
+        // Backend should return JSON (AuthResponse). If it doesn't, this will throw.
         data = JSON.parse(responseText);
       } catch (parseError) {
-        console.error('JSON parse error:', parseError);
+        console.error('Registration response parse error:', parseError);
 
-        // If we purposely threw an empty-response error above, don't re-wrap it.
-        if (parseError?.message === 'Server returned empty response') {
+        // Surface empty-response error directly.
+        if (parseError?.message?.startsWith('Server returned empty response')) {
           throw parseError;
         }
 
+        // If backend returned HTML (500 error page) or something non-JSON, show that.
         throw new Error('Server returned invalid JSON: ' + (parseError?.message || 'Unable to parse response'));
       }
+
 
 
       if (!response.ok) {
