@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -12,7 +13,7 @@ export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -43,6 +44,33 @@ export function Login() {
     } else {
       toast.error(result.message || 'Invalid email or password');
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
+    const result = await googleLogin(credentialResponse);
+    setLoading(false);
+
+    if (result.success) {
+      toast.success('Google login successful!');
+
+      // Get user to check role
+      const userData = localStorage.getItem('laundry_user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        if (user.role === 'staff' || user.role === 'admin') {
+          navigate('/staff');
+        } else {
+          navigate('/customer');
+        }
+      }
+    } else {
+      toast.error(result.message || 'Google login failed');
+    }
+  };
+
+  const handleGoogleError = () => {
+    toast.error('Google login failed. Please try again.');
   };
 
   return (
@@ -93,6 +121,27 @@ export function Login() {
                 'Sign In'
               )}
             </Button>
+
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              </div>
+            </div>
+
+            {/* Google Login Button */}
+            <div className="flex justify-center">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                theme="outline"
+                size="large"
+              />
+            </div>
+
             <p className="text-sm text-center text-gray-600">
               Don't have an account?{' '}
               <Link to="/register" className="text-blue-600 hover:underline font-medium">

@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 const AuthContext = createContext();
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8081';
-const DEVELOPMENT_MODE = true; // Set to false to persist login
+const DEVELOPMENT_MODE = false; // Set to false to persist login
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -49,14 +49,22 @@ export function AuthProvider({ children }) {
         console.log('Response text:', responseText);
         
         if (!responseText) {
+          // Keep this error as-is so the UI shows the real cause.
           throw new Error('Server returned empty response');
         }
         
         data = JSON.parse(responseText);
       } catch (parseError) {
         console.error('JSON parse error:', parseError);
-        throw new Error('Server returned invalid JSON: ' + parseError.message);
+
+        // If we purposely threw an empty-response error above, don't re-wrap it.
+        if (parseError?.message === 'Server returned empty response') {
+          throw parseError;
+        }
+
+        throw new Error('Server returned invalid JSON: ' + (parseError?.message || 'Unable to parse response'));
       }
+
 
       if (!response.ok) {
         const errorMessage = data.message || data.error?.message || 'Registration failed';
@@ -88,7 +96,8 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -109,8 +118,15 @@ export function AuthProvider({ children }) {
         data = JSON.parse(responseText);
       } catch (parseError) {
         console.error('JSON parse error:', parseError);
-        throw new Error('Server returned invalid JSON: ' + parseError.message);
+
+        // If the server body was empty, show that directly (don't re-wrap as invalid JSON).
+        if (parseError?.message === 'Server returned empty response') {
+          throw parseError;
+        }
+
+        throw new Error('Server returned invalid JSON: ' + (parseError?.message || 'Unable to parse response'));
       }
+
 
       if (!response.ok) {
         throw new Error(data.message || data.error?.message || 'Invalid credentials');
@@ -141,6 +157,62 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const googleLogin = async (credentialResponse) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/google`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token: credentialResponse.credential,
+        }),
+      });
+
+      let data;
+      try {
+        const responseText = await response.text();
+        if (!responseText) {
+          // Show server status + avoid JSON.parse crash
+          throw new Error(`Empty response from server (status ${response.status})`);
+        }
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        // If server returns non-JSON (e.g., 501 page or stacktrace), surface it
+        throw new Error(parseError.message || 'Google login failed');
+      }
+
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error?.message || 'Google login failed');
+      }
+
+      // Store token and user data
+      localStorage.setItem('laundry_token', data.accessToken);
+      localStorage.setItem('laundry_user', JSON.stringify({
+        name: data.name,
+        email: data.email,
+        role: data.role || 'customer',
+      }));
+
+      setToken(data.accessToken);
+      setUser({
+        name: data.name,
+        email: data.email,
+        role: data.role || 'customer',
+      });
+
+      return { success: true, message: 'Google login successful' };
+    } catch (error) {
+      console.error('Google login error:', error);
+      const message = error instanceof TypeError 
+        ? 'Failed to connect to server. Make sure backend is running on ' + API_BASE_URL
+        : error.message || 'Google login failed';
+      return { success: false, message };
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('laundry_token');
     localStorage.removeItem('laundry_user');
@@ -149,7 +221,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, googleLogin }}>
       {children}
     </AuthContext.Provider>
   );

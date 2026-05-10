@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Login } from './pages/auth/Login';
@@ -19,6 +20,13 @@ import WeighOrder from './pages/staff/WeighOrder';
 import AssignMachine from './pages/staff/AssignMachine';
 
 import './App.css';
+
+const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+console.log('[Google] GOOGLE_CLIENT_ID (raw env):', process.env.REACT_APP_GOOGLE_CLIENT_ID);
+console.log('[Google] GOOGLE_CLIENT_ID (used):', GOOGLE_CLIENT_ID);
+if (!GOOGLE_CLIENT_ID) {
+  console.error('[Google] Missing REACT_APP_GOOGLE_CLIENT_ID in environment.');
+}
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -132,12 +140,14 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <AppContent />
-        <Toaster position="top-center" />
-      </AuthProvider>
-    </Router>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <Router>
+        <AuthProvider>
+          <AppContent />
+          <Toaster position="top-center" />
+        </AuthProvider>
+      </Router>
+    </GoogleOAuthProvider>
   );
 }
 

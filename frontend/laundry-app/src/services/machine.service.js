@@ -2,16 +2,52 @@ import api from './api';
 import { mockMachines } from '../data/mockMachines';
 
 export const machineService = {
+  async getAllMachines() {
+    try {
+      const response = await api.get(`/machines`);
+      return response.data;
+    } catch (error) {
+      console.warn('Using mock machines data:', error);
+      return this.getMockAllMachines();
+    }
+  },
+
+  async getMachinesByType(type) {
+    try {
+      const response = await api.get(`/machines/type/${encodeURIComponent(type)}`);
+      return response.data;
+    } catch (error) {
+      console.warn('Using mock machines data for type:', type, error);
+      return mockMachines[type] || [];
+    }
+  },
+
   async getAvailableMachines(type) {
     try {
       const response = await api.get(`/machines/available?type=${encodeURIComponent(type)}`);
-      // backend returns raw list of machines (no ApiResponse wrapper)
       return response.data;
     } catch (error) {
-      // Fallback to mock data for development/demo
       console.warn('Using mock machines data:', error);
       return this.getMockAvailableMachines(type);
     }
+  },
+
+  async getMachineById(id) {
+    try {
+      const response = await api.get(`/machines/${id}`);
+      return response.data;
+    } catch (error) {
+      console.warn('Failed to fetch machine:', error);
+      return null;
+    }
+  },
+
+  getMockAllMachines() {
+    const allMachines = [];
+    for (const type in mockMachines) {
+      allMachines.push(...mockMachines[type]);
+    }
+    return allMachines;
   },
 
   getMockAvailableMachines(type) {
@@ -19,16 +55,7 @@ export const machineService = {
     return machines.filter(machine => machine.available);
   },
 
-  getAllMachines(type) {
-    return mockMachines[type] || [];
-  },
-
-  getMachineById(id) {
-    for (const type in mockMachines) {
-      const machine = mockMachines[type].find(m => m.id === id);
-      if (machine) return machine;
-    }
-    return null;
+  getAllMachinesSync() {
+    return this.getMockAllMachines();
   },
 };
-
